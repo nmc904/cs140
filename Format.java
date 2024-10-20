@@ -7,10 +7,21 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
+/**
+ * Formats input text file to be smaller than an input length restriction such that the
+ * penalty of (l-lineLength)^3 is minimized. DP solution.
+ * 
+ * @author Nick McGeveran 
+ */
 public class Format {
-    //command line inputs: L (length of line) and name of file
+   
 
-    //helper func. to read text file & return ArrayList
+    /**
+     * Reads a text file and splits words into list
+     * 
+     * @param filename file to read
+     * @return arrayList of words in file
+     */
     protected static List<String> readFile(String filename){
         List<String> al = new ArrayList<String>();
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
@@ -27,20 +38,34 @@ public class Format {
         return al;
     }
 
-    //helper func. to write overall penalty and formatted string to file
+    /**
+     * Writes to results file. The first line is the penalty of the entire text, and the
+     * remaining lines are the formatted text
+     * 
+     * @param penalty the penalty to be printed
+     * @param breakpoints list of last line break at every index 
+     * @param words arraylist of words 
+     * @param outfile file to write to
+     */
     protected static void writeFile(int penalty, int[] breakpoints, List<String> words, String outfile){
         List<Integer> bList = new ArrayList<Integer>();
         int reverse = breakpoints.length - 1;
+       //adds the places from breakpoint list where line breaks to a new list
         while (reverse > 0){
             bList.add(breakpoints[reverse]);
             reverse = breakpoints[reverse];
         }
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outfile))) {
+            //write the penalty
             writer.write(Integer.toString(penalty));
             writer.newLine();
+            
+            //start with first non-zero linebreak
             int bpoint = bList.size() - 2;
             writer.write(words.get(0));
+            
+            //write words to file. break line when necessary, otherwise add a space
             for (int i = 1; i < words.size(); i++){
                 if (bpoint >= 0 && i == bList.get(bpoint)) {
                     writer.newLine();
@@ -56,8 +81,15 @@ public class Format {
     
     }
 
-    //helper func. to calculate length in characters of previously calculated lines
-    //Does space belong to one before or after? lowkey either
+    //Maybe change how this is done -- this is poor time complexity to repeatedly call in the for loop
+    /**
+     * calculates the total length of the words we have considered
+     * 
+     * @param strings
+     * @param start
+     * @param end
+     * @return
+     */
     protected static int findLength (List<String> strings, int start, int end){
         int result = 0;
         while (start <= end){
@@ -89,15 +121,10 @@ public class Format {
 
     public static void main(String[] args) {
         //takes in array of words and length of line L
-        int l = 7;
-        List<String> words = new ArrayList<String>();
-        words.add("Stop");
-        words.add("to");
-        words.add("hop");
-        words.add("on");
-        words.add("pop");
-        //words.add("yesterday");
-        //words.add("evening");
+        int l = Integer.parseInt(args[0]);
+        String infile = args[1];
+        
+        List<String> words = readFile(infile);
 
         //function
         int[] penalty = new int[words.size() + 1];
@@ -116,7 +143,6 @@ public class Format {
                 int breakIndex = -1;
                 int j = findJ(words, i, l);
                 for ( ; j <= i; j++){
-                    //this line might be a problem
                     int curPenalty = penalty[j] + (int) Math.pow(l - findLength(words, j, i), 3);
                     if (curPenalty < min){
                         min = curPenalty;
@@ -127,11 +153,8 @@ public class Format {
                 penalty[i+1] = min; 
                 }
             }
-        System.out.println(Arrays.toString(breakpoint));
-        System.out.println(Arrays.toString(penalty));
 
-        writeFile(penalty[penalty.length - 1], breakpoint, words, "/Users/nick/cs140/results.txt");
-        
+        writeFile(penalty[penalty.length - 1], breakpoint, words, "/Users/nick/cs140/results.txt"); 
         
         }     
     }
